@@ -19,7 +19,7 @@ HW_VER_BUILD = 0
 
 # ----------------------------- SOURCES -----------------------------
 # put all of your sources here (use / as path separator)
-SRC += ./startup.c ./vectors.c ./defhndl.c ./image.c ./main.c
+SRC += ./startup.c ./vectors.c ./defhndl.c ./image.c ./gesture.cpp
 
 # ----------------------------- INCLUDES ----------------------------
 # put all used include directories here (use / as path separator)
@@ -65,7 +65,7 @@ endif
 # ------------------------- BUILD TOOLS -----------------------------
 # build tools (set to 'gcc' or 'llvm')
 TOOLCHAIN = gcc
-# proper system path for selected build tools (leave empty if these are in 
+# proper system path for selected build tools (leave empty if these are in
 # system PATH)
 TOOLCHAIN_PATH =
 
@@ -104,7 +104,7 @@ OBJ_DIR_PATH = $(subst /,$(PATH_SEP),$(OBJ_DIR))
 TARGET_PATH = $(OUT_DIR_PATH)$(PATH_SEP)$(TARGET)
 # output file name with version information
 TARGET_VER = $(TARGET)_$(HW_VER)_$(SW_VER)
-# target file name with path and version information 
+# target file name with path and version information
 TARGET_VER_PATH = $(OUT_DIR_PATH)$(PATH_SEP)$(TARGET_VER)
 
 # sources converted to objs with valid path separator
@@ -143,9 +143,9 @@ CC_FLAGS += -DSW_VER_BUILD=$(SW_VER_BUILD)
 CC_FLAGS += -DHW_VER_MAJOR=$(HW_VER_MAJOR)
 CC_FLAGS += -DHW_VER_MINOR=$(HW_VER_MINOR)
 CC_FLAGS += -DHW_VER_MINOR=$(HW_VER_BUILD)
- 
-# linker flags 
-LD_FLAGS  = -T$(LD_SCRIPT) 
+
+# linker flags
+LD_FLAGS  = -T$(LD_SCRIPT)
 LD_FLAGS += $(addprefix -,$(LIBS)) $(addprefix -L,$(LIB_DIRS))
 LD_FLAGS +=  -Wl,-Map=$(TARGET_PATH).map
 LD_FLAGS += -Wl,--gc-sections -nostdlib
@@ -154,11 +154,11 @@ LD_FLAGS += -Wl,--gc-sections -nostdlib
 OBD_FLAGS  = -j ".flash_code" -j ".ram_code" -S
 # additional flags for clang/llvm
 ifeq ($(BUILD_TOOLS),llvm)
-    OBD_FLAGS += -mcpu=cortex-m4 -mattr=vfp4 
+    OBD_FLAGS += -mcpu=cortex-m4 -mattr=vfp4
     OBD_FLAGS += --triple=thumbv7em-unknown-none-eabihf
 endif
 
-# object copy flags 
+# object copy flags
 OBC_FLAGS  = -O binary
 
 CXX_FLAGS += -E -P -Wl,--gc-sections -Wl,--wrap,main -Wl,--wrap,_malloc_r -Wl,--wrap,_free_r -Wl,--wrap,_realloc_r -Wl,--wrap,_memalign_r -Wl,--wrap,_calloc_r -Wl,--wrap,exit -Wl,--wrap,atexit -Wl,-n -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -fmessage-length=0 -fno-exceptions -ffunction-sections -fdata-sections -funsigned-char -MMD -fomit-frame-pointer -Os -g
@@ -180,11 +180,16 @@ $(OBJ_DIR_PATH)$(PATH_SEP)%.o : %.c
 	-@ $(MKDIR) $(dir $@)
 	$(CC) -c -g $(CC_FLAGS) $< -o $@
 
+$(OBJ_DIR_PATH)$(PATH_SEP)%.o : %.cpp
+	@ $(ECHO) --------------------- Compiling $< ---------------------
+	-@ $(MKDIR) $(dir $@)
+	$(CXX) -c -g $(CXX_FLAGS) $< -o $@
+
 # link all thogether and generate elf file from objs and *.map file
 $(TARGET_PATH).elf: $(OBJ)
 	@ $(ECHO) ---------------------    Linking   ---------------------
 	-@ $(MKDIR) $(dir $@)
-	$(CC) $(CC_FLAGS) $(OBJ) --output $@ $(LD_FLAGS) 
+	$(CC) $(CC_FLAGS) $(OBJ) --output $@ $(LD_FLAGS)
 
 # geneate listing
 $(TARGET_PATH).lst: $(TARGET_PATH).elf
@@ -209,7 +214,7 @@ size: $(TARGET_PATH).elf
 
 # clean build products
 clean:
-	- $(RM) $(OBJ) 
+	- $(RM) $(OBJ)
 	- $(RM) $(TARGET_PATH).elf $(TARGET_PATH).bin $(TARGET_VER_PATH).bin
 	- $(RM) $(TARGET_PATH).map $(TARGET_PATH).sym $(TARGET_PATH).lst
 	- $(RMDIR) $(OBJ_DIR_PATH) $(OUT_DIR_PATH)
