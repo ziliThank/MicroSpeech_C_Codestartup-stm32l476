@@ -33,13 +33,13 @@ LIB_DIRS = .
 
 # ----------------------- OPTIMIZATION LEVEL ------------------------
 # use '-O0' (no optimization) for debugging or (-Os) for release
-OPT_LEVEL = -O0
+OPT_LEVEL = -Os
 
 # ----------------------- OUTPUT DIRECTORIES ------------------------
 # object files directory (use / as path separator)
-OBJ_DIR = ../.objs
+OBJ_DIR = ./obj
 # final binaries directory (use / as path separator)
-OUT_DIR = ./.outs
+OUT_DIR = ./out
 
 # --------------------- TOOLS && CONFIGURATION ----------------------
 # windows tools configuration
@@ -111,11 +111,18 @@ TARGET_VER_PATH = $(OUT_DIR_PATH)$(PATH_SEP)$(TARGET_VER)
 OBJ = $(subst /,$(PATH_SEP), $(SRC:%.c=$(OBJ_DIR_PATH)$(PATH_SEP)%.o))
 
 # --------------------------- BUILD FLAGS ---------------------------
+
+CC_FLAGS_COMMON += -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -fmessage-length=0 -fno-exceptions -ffunction-sections -fdata-sections -funsigned-char -MMD -fomit-frame-pointer -Os -DNDEBUG -g
+CC_FLAGS_ASM += -c -x assembler-with-cpp
+CC_FLAGS_C += -c -std=gnu11
+CC_FLAGS_CXX += -c -std=gnu++14 -fno-rtti -Wvla
+CC_FLAGS_LD += -Wl,--gc-sections -Wl,--wrap,main -Wl,--wrap,_malloc_r -Wl,--wrap,_free_r -Wl,--wrap,_realloc_r -Wl,--wrap,_memalign_r -Wl,--wrap,_calloc_r -Wl,--wrap,exit -Wl,--wrap,atexit -Wl,-n
+
 # optimization level and C standard
 CC_FLAGS += $(OPT_LEVEL) --std=c18
 # target architecture flags
 CC_FLAGS  = -mcpu=cortex-m4 -march=armv7e-m -mthumb $(OPT_LEVEL)
-CC_FLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
+CC_FLAGS += -mfloat-abi=softfp -mfpu=fpv4-sp-d16
 # additional architecture flags for clang/llvm
 ifeq ($(TOOLCHAIN),llvm)
     CC_FLAGS += --target=thumbv7em-unknown-none-eabihf
@@ -154,16 +161,24 @@ endif
 # object copy flags 
 OBC_FLAGS  = -O binary
 
+CXX_FLAGS += -E -P -Wl,--gc-sections -Wl,--wrap,main -Wl,--wrap,_malloc_r -Wl,--wrap,_free_r -Wl,--wrap,_realloc_r -Wl,--wrap,_memalign_r -Wl,--wrap,_calloc_r -Wl,--wrap,exit -Wl,--wrap,atexit -Wl,-n -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -fmessage-length=0 -fno-exceptions -ffunction-sections -fdata-sections -funsigned-char -MMD -fomit-frame-pointer -Os -g
+
+
 # -------------------------- BUILD PROCESS --------------------------
 # generate elf and bin and all other files
 all: $(TARGET_PATH).elf $(TARGET_PATH).lst $(TARGET_PATH).sym \
 	 $(TARGET_PATH).bin size
 
 # compile all sources
+#$(OBJ_DIR_PATH)$(PATH_SEP)%.o : %.c
+#	@ $(ECHO) --------------------- Compiling $< ---------------------
+#	-@ $(MKDIR) $(dir $@)
+#	$(CC) -c $(CC_FLAGS) $< -o $@
+
 $(OBJ_DIR_PATH)$(PATH_SEP)%.o : %.c
 	@ $(ECHO) --------------------- Compiling $< ---------------------
 	-@ $(MKDIR) $(dir $@)
-	$(CC) -c $(CC_FLAGS) $< -o $@
+	$(CC) -c -g $(CC_FLAGS) $< -o $@
 
 # link all thogether and generate elf file from objs and *.map file
 $(TARGET_PATH).elf: $(OBJ)

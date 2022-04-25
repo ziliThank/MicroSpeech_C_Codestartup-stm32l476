@@ -52,6 +52,19 @@ static void Startup_ZeroSection(void *ptr, size_t size)
     }
 }
 
+void StartHere(void)
+{
+  asm volatile(
+	  "LDR.W   R0, =0xE000ED88\n\t"       // CPACR is located at address 0xE000ED88
+	  "LDR     R1, [R0]\n\t"              // Read CPACR
+	  "ORR     R1, R1, #(0xF << 20)\n\t"  // Set bits 20-23 to enable CP10 and CP11 coprocessors
+	  "STR     R1, [R0]\n\t"              // Write back the modified value to the CPACR
+	  "DSB\n\t"                           // Wait for store to complete
+	  "ISB\n\t"                           // Reset pipeline now the FPU is enabled
+  );
+}
+
+
 /* first function to be executed after the reset. Shall initialize the chip
  * to it's default state */
 void SECTION(".flash_code") Startup_ResetHandler(void)
@@ -64,7 +77,8 @@ void SECTION(".flash_code") Startup_ResetHandler(void)
         (size_t)&__ram_code_size, (size_t)&__data_size);
     /* zero out the bss */
 	Startup_ZeroSection(&__bss_addr, (size_t)&__bss_size);
-
+	
+	StartHere();
 	/* jump to main program routine */
 	Main();
 }
