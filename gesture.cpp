@@ -8,8 +8,7 @@
 
 #include <array>
 #include <cmath>
-// #include <cstdio>
-// #include <cstdlib>
+#include "util.h"
 
 // input 1xN, weights MxN, bias 1xM, output 1xM
 template <int N, int M>
@@ -43,10 +42,10 @@ template <int N> void relu_layer(float input[N]) {
 }
 
 template <int N> void print_array(const float input[N]) {
-  // for (int i = 0; i < N; i++) {
-  //   printf("%f, ", input[i]);
-  // }
-  // printf("\n");
+  for (int i = 0; i < N; i++) {
+    USART2_write_int(input[i]);
+  }
+  USART2_write("\n");
 }
 
 #include "model.hpp"
@@ -55,6 +54,7 @@ float output1[C1] = {};
 float output2[C2] = {};
 float output3[C3] = {};
 extern "C" int Main(void) {
+  USART2_Init();
   // LL_SetSystemCoreClock(80000000);
   // read input data
   // FILE *fptr;

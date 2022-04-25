@@ -48,3 +48,5 @@
 # other hidden stuff
 .*/
 
+/obj
+/out

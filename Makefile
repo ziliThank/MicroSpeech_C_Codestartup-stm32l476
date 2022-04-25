@@ -19,7 +19,8 @@ HW_VER_BUILD = 0
 
 # ----------------------------- SOURCES -----------------------------
 # put all of your sources here (use / as path separator)
-SRC += ./startup.c ./vectors.c ./defhndl.c ./image.c ./gesture.cpp
+SRC_C += ./startup.c ./vectors.c ./defhndl.c ./image.c ./util.c
+SRC_CXX += ./gesture.cpp
 
 # ----------------------------- INCLUDES ----------------------------
 # put all used include directories here (use / as path separator)
@@ -72,6 +73,7 @@ TOOLCHAIN_PATH =
 # build tools for the clang/llvm approach
 ifeq ($(TOOLCHAIN),llvm)
     CC = $(TOOLCHAIN_PATH)clang
+    CXX = $(TOOLCHAIN_PATH)clang++
     AS = $(TOOLCHAIN_PATH)clang
     LD = $(TOOLCHAIN_PATH)ld
     OBC = $(TOOLCHAIN_PATH)llvm-objcopy
@@ -83,6 +85,7 @@ endif
 # buildtools for the gcc approach
 ifeq ($(TOOLCHAIN),gcc)
     CC = $(TOOLCHAIN_PATH)arm-none-eabi-gcc
+    CXX = $(TOOLCHAIN_PATH)arm-none-eabi-g++
     AS = $(TOOLCHAIN_PATH)arm-none-eabi-gcc
     LD = $(TOOLCHAIN_PATH)arm-none-eabi-ld
     OBC = $(TOOLCHAIN_PATH)arm-none-eabi-objcopy
@@ -108,7 +111,8 @@ TARGET_VER = $(TARGET)_$(HW_VER)_$(SW_VER)
 TARGET_VER_PATH = $(OUT_DIR_PATH)$(PATH_SEP)$(TARGET_VER)
 
 # sources converted to objs with valid path separator
-OBJ = $(subst /,$(PATH_SEP), $(SRC:%.c=$(OBJ_DIR_PATH)$(PATH_SEP)%.o))
+OBJ += $(subst /,$(PATH_SEP), $(SRC_C:%.c=$(OBJ_DIR_PATH)$(PATH_SEP)%.o))
+OBJ += $(subst /,$(PATH_SEP), $(SRC_CXX:%.cpp=$(OBJ_DIR_PATH)$(PATH_SEP)%.o))
 
 # --------------------------- BUILD FLAGS ---------------------------
 
@@ -161,7 +165,7 @@ endif
 # object copy flags
 OBC_FLAGS  = -O binary
 
-CXX_FLAGS += -E -P -Wl,--gc-sections -Wl,--wrap,main -Wl,--wrap,_malloc_r -Wl,--wrap,_free_r -Wl,--wrap,_realloc_r -Wl,--wrap,_memalign_r -Wl,--wrap,_calloc_r -Wl,--wrap,exit -Wl,--wrap,atexit -Wl,-n -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -fmessage-length=0 -fno-exceptions -ffunction-sections -fdata-sections -funsigned-char -MMD -fomit-frame-pointer -Os -g
+CXX_FLAGS += -Wl,--gc-sections -Wl,--wrap,main -Wl,--wrap,_malloc_r -Wl,--wrap,_free_r -Wl,--wrap,_realloc_r -Wl,--wrap,_memalign_r -Wl,--wrap,_calloc_r -Wl,--wrap,exit -Wl,--wrap,atexit -Wl,-n -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -fmessage-length=0 -fno-exceptions -ffunction-sections -fdata-sections -funsigned-char -MMD -fomit-frame-pointer -Os -g
 
 
 # -------------------------- BUILD PROCESS --------------------------
